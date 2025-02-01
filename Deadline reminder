@@ -1,0 +1,162 @@
+query_map = Map();
+criteria_string = "ismapped==TRUE";
+query_map.put("criteria",criteria_string);
+response_map = zoho.cliq.getRecords("channeldb",query_map);
+project_channel_list = List();
+if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+{
+	for each  record in response_map.get("list")
+	{
+		record_data = Map();
+		record_data.put("projectid",record.get("projectid"));
+		record_data.put("channelname",record.get("channelname"));
+		project_channel_list.add(record_data);
+	}
+}
+info project_channel_list;
+for each  i in project_channel_list
+{
+	project_id = i.get("projectid");
+	channel_name = i.get("channelname");
+	response = Map();
+	response.put("text","Hello Team, Tomorrow is the deadline for these tasks.");
+	bot = Map();
+	bot.put("name","Task info");
+	response.put("bot",bot);
+	card = Map();
+	card.put("theme","modern-inline");
+	response.put("card",card);
+	slidesList = list();
+	teamID_response = invokeurl
+	[
+		url :"https://sprintsapi.zoho.in/zsapi/teams/"
+		type :GET
+		connection:"3236-60036291272-zsprints_cliq"
+	];
+	team_id = teamID_response.get("myTeamId");
+	sprint_response = invokeurl
+	[
+		url :"https://sprintsapi.zoho.in/zsapi/team/" + team_id + "/projects/" + project_id + "/sprints/?action=data&index=1&range=50&type=%5B2%5D"
+		type :GET
+		connection:"3236-60036291272-zsprints_cliq"
+	];
+	number_of_active_sprints = sprint_response.get("sprintIds").toList().size();
+	sprint_id = sprint_response.get("sprintIds").toList().get(0);
+	// if(number_of_active_sprints ==1)
+	// {
+	// }
+	// else 
+	// {
+	// 	zoho.cliq.postToChannel("sprintsinfo","There are more than one active sprint. Consider closing the sprints or moving the tasks to another sprint.");
+	// }
+	item_response = invokeurl
+	[
+		url :"https://sprintsapi.zoho.in/zsapi/team/" + team_id + "/projects/" + project_id + "/sprints/" + sprint_id + "/item/?action=data&index=1&range=100"
+		type :GET
+		connection:"3236-60036291272-zsprints_cliq"
+	];
+	// info item_response;
+	//Getting user id and user name.
+	users_involved_list = item_response.get("userDisplayName").keys().toList();
+	user_map = Map();
+	for each  u_id in users_involved_list
+	{
+		user_map.put(u_id,item_response.get("userDisplayName").get(u_id.toString().trim()));
+	}
+	// info user_map;
+	statusMap = {"33852000000006553":"To Do","33852000000006555":"In Progress","33852000000006557":"Done"};
+	priority_map = {"33852000000022202":"None","33852000000022204":"Low","33852000000022206":"Medium","33852000000022208":"High"};
+	task_status = "";
+	task_name = "";
+	task_priority = "";
+	task_id_list = item_response.get("itemJObj").keys().toList();
+	tasks_without_deadline = Collection();
+	slidesList0 = Map();
+	slidesList0.put("type","table");
+	slidesList0.put("title","Tasks");
+	data = Map();
+	headersList = list();
+	headersList.add("Task name");
+	headersList.add("Assigned To");
+	headersList.add("Status");
+	headersList.add("Priority");
+	headersList.add("Due date");
+	data.put("headers",headersList);
+	rowsList = list();
+	for each  t_id in task_id_list
+	{
+		item_data = item_response.get("itemJObj").get(t_id.toString().trim());
+		user_id_list = item_response.get("itemJObj").get(t_id.toString().trim()).toList().get(31).toList();
+		if(item_data.get(6) != "-1")
+		{
+			end_date = item_data.get(6).toDate("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+			today = zoho.currentdate.toDate();
+			one_day_from_now = today.addDay(1);
+			status_code = item_data.get(27).toString().trim();
+			priority_code = item_data.get(29).toString().trim();
+			if(statusMap.containsKey(status_code) && priority_map.containsKey(priority_code))
+			{
+				task_name = item_data.get(0);
+				task_status = statusMap.get(status_code);
+				task_priority = priority_map.get(priority_code);
+			}
+			if(end_date < one_day_from_now && end_date > today && task_status != "Done")
+			{
+				rowsList0 = Map();
+				rowsList0.put("Task name",task_name);
+				assigned_to = "";
+				for each  user in user_id_list
+				{
+					assigned_to = assigned_to + user_map.get(user) + " /";
+				}
+				rowsList0.put("Assigned To",assigned_to.subString(0,assigned_to.length() - 1));
+				rowsList0.put("Status",task_status);
+				rowsList0.put("Priority",task_priority);
+				rowsList0.put("Due date",end_date);
+				rowsList.add(rowsList0);
+			}
+		}
+		else
+		{
+			status_code = item_data.get(27).toString().trim();
+			priority_code = item_data.get(29).toString().trim();
+			if(statusMap.containsKey(status_code) && priority_map.containsKey(priority_code))
+			{
+				task_name = item_data.get(0);
+				task_status = statusMap.get(status_code);
+				task_priority = priority_map.get(priority_code);
+			}
+			if(task_status != "Done")
+			{
+				if(!tasks_without_deadline.contains(task_name))
+				{
+					tasks_without_deadline.add(task_name);
+				}
+			}
+		}
+	}
+	data.put("rows",rowsList);
+	slidesList0.put("data",data);
+	slidesList.add(slidesList0);
+	if(tasks_without_deadline.size() > 1)
+	{
+		slidesList2 = Map();
+		slidesList2.put("type","text");
+		slidesList2.put("data","Alert: " + tasks_without_deadline + " are missing end date");
+		slidesList.add(slidesList2);
+	}
+	else if(tasks_without_deadline.size() == 1)
+	{
+		slidesList2 = Map();
+		slidesList2.put("type","text");
+		slidesList2.put("data","Alert: " + tasks_without_deadline + " is missing end date");
+		slidesList.add(slidesList2);
+	}
+	response.put("slides",slidesList);
+	if(rowsList.size() >= 1)
+	{
+		// 		zoho.cliq.postToChannel(channel_name,response);
+		zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
+		// 	zoho.cliq.postToBot("taskinfo",response);
+	}
+}
