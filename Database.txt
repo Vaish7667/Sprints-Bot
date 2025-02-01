@@ -1,0 +1,8 @@
+1) map channel db:
+projectid, ismpped, channle unique name
+
+2) monthly task db -> stores all months task to show at year end.
+task name, completed on, assigned to
+
+3) task id's from sprints -> stores task id and its status to keep track of it at the end of the week.
+task status, task id
