@@ -1,0 +1,243 @@
+
+query_map = Map();
+criteria_string = "ismapped==TRUE";
+query_map.put("criteria",criteria_string);
+response_map = zoho.cliq.getRecords("channeldb",query_map);
+project_channel_list = List();
+if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+{
+	for each  record in response_map.get("list")
+	{
+		record_data = Map();
+		record_data.put("projectid",record.get("projectid"));
+		record_data.put("channelname",record.get("channelname"));
+		project_channel_list.add(record_data);
+	}
+}
+info project_channel_list;
+for each  i in project_channel_list
+{
+	project_id = i.get("projectid");
+	channel_name = i.get("channelname");
+	response = Map();
+	response.put("text","Hello Team, Your Progress of tasks throughout the week.");
+	bot = Map();
+	bot.put("name","Progress info");
+	response.put("bot",bot);
+	card = Map();
+	card.put("theme","modern-inline");
+	response.put("card",card);
+	slidesList = list();
+	teamID_response = invokeurl
+	[
+		url :"https://sprintsapi.zoho.in/zsapi/teams/"
+		type :GET
+		connection:"3236-60036291272-zsprints_cliq"
+	];
+	team_id = teamID_response.get("myTeamId");
+	sprint_response = invokeurl
+	[
+		url :"https://sprintsapi.zoho.in/zsapi/team/" + team_id + "/projects/" + project_id + "/sprints/?action=data&index=1&range=50&type=%5B2%5D"
+		type :GET
+		connection:"3236-60036291272-zsprints_cliq"
+	];
+	number_of_active_sprints = sprint_response.get("sprintIds").toList().size();
+	sprint_id = sprint_response.get("sprintIds").toList().get(0);
+	// if(number_of_active_sprints ==1)
+	// {
+	// }
+	// else 
+	// {
+	// 	zoho.cliq.postToChannel("sprintsinfo","There are more than one active sprint. Consider closing the sprints or moving the tasks to another sprint.");
+	// }
+	item_response = invokeurl
+	[
+		url :"https://sprintsapi.zoho.in/zsapi/team/" + team_id + "/projects/" + project_id + "/sprints/" + sprint_id + "/item/?action=data&index=1&range=100"
+		type :GET
+		connection:"3236-60036291272-zsprints_cliq"
+	];
+	query_map = Map();
+	query_map.put("criteria","");
+	response_map = zoho.cliq.getRecords("taskiddb",query_map);
+	task_info = Map();
+	if(response_map.get("status").equalsIgnoreCase("SUCCESS"))
+	{
+		all_records = response_map.get("list");
+		for each  record in all_records
+		{
+			task_info.put(record.get("taskid"),record.get("status"));
+		}
+	}
+	tasks_in_db = task_info.keys().toList();
+	total_db_tasks = tasks_in_db.size();
+	users_involved_list = item_response.get("userDisplayName").keys().toList();
+	user_map = Map();
+	for each  u_id in users_involved_list
+	{
+		user_map.put(u_id,item_response.get("userDisplayName").get(u_id.toString().trim()));
+	}
+	items = item_response.get("itemJObj");
+	tasks_in_resposne = items.keys();
+	statusMap = {"33852000000006553":"To Do","33852000000006555":"In Progress","33852000000006557":"Done"};
+	task_status = "";
+	task_name = "";
+	task_id_list = item_response.get("itemJObj").keys().toList();
+	tasks_without_deadline = Collection();
+	slidesList0 = Map();
+	slidesList0.put("type","table");
+	slidesList0.put("title","Task progress");
+	data = Map();
+	headersList = list();
+	headersList.add("Task name");
+	headersList.add("Assigned To");
+	headersList.add("Previous Status");
+	headersList.add("Current Status");
+	data.put("headers",headersList);
+	rowsList = list();
+	// 	info "Task for " + user_map.get(u_id);
+	completed_task = 0;
+	for each  t_id in task_id_list
+	{
+		item_data = item_response.get("itemJObj").get(t_id.toString().trim());
+		user_id_list = item_response.get("itemJObj").get(t_id.toString().trim()).toList().get(31).toList();
+		info item_data.get(0);
+		info user_id_list;
+		if(item_data.get(6) != "-1")
+		{
+			end_date = item_data.get(6).toDate("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+			if(item_data.get(15) != "-1")
+			{
+				completed_on_date = item_data.get(15).toDate("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+				today = zoho.currentdate.toDate("yyyy-MM-dd");
+				five_days_before = today.addDay(-5);
+				upper_limit_date = today;
+				// friday's date
+				status_code = item_data.get(27).toString().trim();
+				if(statusMap.containsKey(status_code))
+				{
+					task_name = item_data.get(0);
+					task_status = statusMap.get(status_code);
+				}
+				if(task_status == "Done")
+				{
+					completed_task = completed_task + 1;
+					total_db_tasks = total_db_tasks + 1;
+				}
+				if(end_date >= five_days_before && end_date <= upper_limit_date || completed_on_date >= five_days_before && completed_on_date <= upper_limit_date)
+				{
+					rowsList0 = Map();
+					rowsList0.put("Task name",task_name);
+					assigned_to = "";
+					for each  user in user_id_list
+					{
+						assigned_to = assigned_to + user_map.get(user) + " /";
+					}
+					rowsList0.put("Assigned To",assigned_to.subString(0,assigned_to.length() - 1));
+					rowsList0.put("Previous Status","Unplanned");
+					rowsList0.put("Current Status",task_status);
+					rowsList.add(rowsList0);
+				}
+			}
+			else
+			{
+				today = zoho.currentdate.toDate("yyyy-MM-dd");
+				status_code = item_data.get(27).toString().trim();
+				if(statusMap.containsKey(status_code))
+				{
+					task_name = item_data.get(0);
+					task_status = statusMap.get(status_code);
+				}
+				end_date = item_data.get(6).toDate("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+				five_days_before = today.addDay(-5);
+				upper_limit_date = today;
+				info today;
+				// friday's date
+				if(end_date >= five_days_before && end_date <= upper_limit_date)
+				{
+					rowsList0 = Map();
+					rowsList0.put("Task name",task_name);
+					assigned_to = "";
+					for each  user in user_id_list
+					{
+						assigned_to = assigned_to + user_map.get(user) + " /";
+					}
+					rowsList0.put("Assigned To",assigned_to.subString(0,assigned_to.length() - 1));
+					rowsList0.put("Previous Status",task_info.get(t_id.toString().trim()));
+					rowsList0.put("Current Status",task_status);
+					rowsList.add(rowsList0);
+				}
+				if(task_status == "Done")
+				{
+					completed_task = completed_task + 1;
+				}
+			}
+		}
+		else if(item_data.get(6) == "-1" && tasks_in_db.contains(t_id))
+		{
+			status_code = item_data.get(27).toString().trim();
+			if(statusMap.containsKey(status_code))
+			{
+				task_name = item_data.get(0);
+				task_status = statusMap.get(status_code);
+			}
+			rowsList0 = Map();
+			rowsList0.put("Task name",task_name);
+			assigned_to = "";
+			for each  user in user_id_list
+			{
+				assigned_to = assigned_to + user_map.get(user) + " /";
+			}
+			rowsList0.put("Assigned To",assigned_to.subString(0,assigned_to.length() - 1));
+			rowsList0.put("Previous Status",task_info.get(t_id.toString().trim()));
+			rowsList0.put("Current Status",task_status);
+			rowsList.add(rowsList0);
+			if(!tasks_without_deadline.contains(task_name) && task_status != "Done")
+			{
+				tasks_without_deadline.add(task_name);
+			}
+			if(task_status == "Done")
+			{
+				completed_task = completed_task + 1;
+			}
+		}
+	}
+	data.put("rows",rowsList);
+	slidesList0.put("data",data);
+	slidesList.add(slidesList0);
+	if(tasks_without_deadline.size() == 1)
+	{
+		slidesList2 = Map();
+		slidesList2.put("type","text");
+		slidesList2.put("data","Alert: " + tasks_without_deadline + " is missing end date");
+		slidesList.add(slidesList2);
+	}
+	else if(tasks_without_deadline.size() > 1)
+	{
+		slidesList2 = Map();
+		slidesList2.put("type","text");
+		slidesList2.put("data","Alert: " + tasks_without_deadline + " are missing end date");
+		slidesList.add(slidesList2);
+	}
+	slidesList2 = Map();
+	slidesList2.put("type","text");
+	completion_percentage = ((completed_task * 100) / total_db_tasks).toLong();
+	slidesList2.put("data","Completion Percentage: " + completion_percentage + "%");
+	slidesList.add(slidesList2);
+	response.put("slides",slidesList);
+	// 	zoho.cliq.postToChannel(channel_name,response);
+	zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
+	// zoho.cliq.postToBot("taskinfo",response);
+	// Delete ids from DB.
+	// query_map = Map();
+	// criteria_string = "";
+	// query_map.put("criteria",criteria_string);
+	// response_map = zoho.cliq.getRecords("taskiddb",query_map);
+	// if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+	// {
+	// 	for each  record in response_map.get("list")
+	// 	{
+	// 		record_id = record.get("id");
+	// 		zoho.cliq.deleteRecord("taskiddb",record_id);
+	// 	}
+	// }
+}
