@@ -1,0 +1,25 @@
+
+// query_map = Map();
+// criteria_string = "ismapped==TRUE";
+// query_map.put("criteria",criteria_string);
+// response_map = zoho.cliq.getRecords("channeldb",query_map);
+// project_channel_list = List();
+// if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+// {
+// 	for each  record in response_map.get("list")
+// 	{
+// 		record_data = Map();
+// 		record_data.put("projectid",record.get("projectid"));
+// 		record_data.put("channelname",record.get("channelname"));
+// 		project_channel_list.add(record_data);
+// 	}
+// }
+// project_id = project_channel_list.get(0).get("projectid");
+// channel_name = project_channel_list.get(0).get("channelname");
+// zoho.cliq.postToChannel(channel_name,"Hello Team, Your sprint meeting is scheduled today.");
+response = Map();
+response.put("text","Happy Thursday! :smile:\nYour sprints meeting is scheduled today.");
+card = Map();
+card.put("title","Meeting reminder");
+response.put("card",card);
+zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
