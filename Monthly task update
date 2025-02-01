@@ -1,0 +1,114 @@
+
+response = Map();
+response.put("text","Hello team :hi: , Hope it was a great month :grinning:\n\nList of tasks completed this month:\n");
+bot = Map();
+bot.put("name","Monthly task update");
+response.put("bot",bot);
+slidesList = list();
+slidesList0 = Map();
+slidesList0.put("type","table");
+slidesList0.put("title","Tasks");
+data = Map();
+headersList = list();
+headersList.add("Task name");
+headersList.add("Assigned To");
+headersList.add("Completed on");
+data.put("headers",headersList);
+rowsList = list();
+teamID_response = invokeurl
+[
+	url :"https://sprintsapi.zoho.in/zsapi/teams/"
+	type :GET
+	connection:"3236-60036291272-zsprints_cliq"
+];
+team_id = teamID_response.get("myTeamId");
+project_id = "33852000000022172";
+currentDate = today;
+// startDate = currentDate.toStartOfMonth();
+startDate = "01-Jan-2025".toDate();
+// endDate = currentDate.eomonth(0);
+endDate = "28-Feb-2025".toDate();
+sprints_id = list();
+// Completed sprints
+completed_sprints = invokeurl
+[
+	url :"https://sprintsapi.zoho.in/zsapi/team/" + team_id + "/projects/33852000000022172/sprints/?action=data&index=1&range=100&type=%5B3%5D"
+	type :GET
+	connection:"3236-60036291272-zsprints_cliq"
+];
+sprints_list = completed_sprints.get("sprintJObj").keys().toList();
+for each  sprints in sprints_list
+{
+	completed_date = completed_sprints.get("sprintJObj").get(sprints.toString().trim()).get(3);
+	formattedDate = completed_date.toDate();
+	if(formattedDate >= startDate && formattedDate <= endDate)
+	{
+		sprints_id.add(sprints);
+	}
+}
+// Active Sprints
+active_id = list();
+active_sprints = invokeurl
+[
+	url :"https://sprintsapi.zoho.in/zsapi/team/" + team_id + "/projects/33852000000022172/sprints/?action=data&index=1&range=100&type=%5B2%5D"
+	type :GET
+	connection:"3236-60036291272-zsprints_cliq"
+];
+sprints_list = active_sprints.get("sprintJObj").keys().toList();
+for each  sprints in sprints_list
+{
+	sprints_id.add(sprints);
+}
+// sprints_id contains all the sprint ids that are closed or active this month.
+for each  id in sprints_id
+{
+	sprint_item = invokeurl
+	[
+		url :"https://sprintsapi.zoho.in/zsapi/team/" + team_id + "/projects/33852000000022172/sprints/" + id + "/item/?action=data&index=1&range=100"
+		type :GET
+		connection:"3236-60036291272-zsprints_cliq"
+	];
+	// 	info sprint_item;
+	items_id = sprint_item.get("itemJObj").keys().toList();
+	for each  item in items_id
+	{
+		completedDate = sprint_item.get("itemJObj").get(item.toString().trim()).get(15);
+		user_map = Map();
+		user_details_keys = sprint_item.get("userDisplayName").keys().toList();
+		for each  user_id in user_details_keys
+		{
+			user_map.put(user_id.toString().trim(),sprint_item.get("userDisplayName").get(user_id.toString().trim()));
+		}
+		if(completedDate != "-1")
+		{
+			formattedDate = completedDate.toDate();
+			if(formattedDate >= startDate && formattedDate <= endDate)
+			{
+				user_id_list = sprint_item.get("itemJObj").get(item.toString().trim()).toList().get(31).toList();
+				assigned_to = "";
+				for each  user in user_id_list
+				{
+					assigned_to = assigned_to + user_map.get(user.toString().trim()) + " /";
+				}
+				task_name = sprint_item.get("itemJObj").get(item.toString().trim()).get(0);
+				// 				info "Task name : " + task_name + " - Completed on : " + formattedDate + " Assigned To " + assigned_to.subString(0,assigned_to.length() - 1);
+				rowsList0 = Map();
+				rowsList0.put("Task name",task_name);
+				rowsList0.put("Assigned To",assigned_to.subString(0,assigned_to.length() - 1));
+				rowsList0.put("Completed on",formattedDate);
+				rowsList.add(rowsList0);
+				values_map = Map();
+				values_map.put("taskname",task_name);
+				values_map.put("completedon",formattedDate);
+				values_map.put("assignedto",assigned_to.subString(0,assigned_to.length() - 1));
+				response_map = zoho.cliq.createRecord("monthlytask",values_map);
+			}
+		}
+	}
+	data.put("rows",rowsList);
+}
+// store all month details in db and show it at the end of the year.
+slidesList0.put("data",data);
+slidesList.add(slidesList0);
+response.put("slides",slidesList);
+zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
