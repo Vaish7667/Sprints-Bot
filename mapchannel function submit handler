@@ -1,0 +1,51 @@
+
+response = Map();
+formValues = form.get("values");
+p_id = formValues.get("project").get("value");
+new_channel_name = formValues.get("channel").get("value");
+info p_id;
+info new_channel_name;
+query_map = Map();
+criteria_string = "projectid==" + p_id;
+query_map.put("criteria",criteria_string);
+response_map = zoho.cliq.getRecords("channeldb",query_map);
+record_id = 0;
+existing_channel_name = "";
+already_mapped = false;
+if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+{
+	for each  record in response_map.get("list")
+	{
+		if(record.get("ismapped") == "TRUE")
+		{
+			record_id = record.get("id");
+			existing_channel_name = record.get("channelname");
+			if(existing_channel_name == new_channel_name)
+			{
+				zoho.cliq.postToChannel(existing_channel_name,"This channel is already mapped for this project.");
+				already_mapped = true;
+			}
+			else
+			{
+				zoho.cliq.postToChannel(existing_channel_name,"This channel is unmapped from getting notification");
+			}
+			break;
+		}
+	}
+}
+if(!already_mapped)
+{
+	if(record_id.length() > 0)
+	{
+		values_map = Map();
+		values_map.put("ismapped","FALSE");
+		zoho.cliq.updateRecord("channeldb",record_id,values_map);
+	}
+	values_map = Map();
+	values_map.put("projectid",p_id);
+	values_map.put("ismapped","TRUE");
+	values_map.put("channelname",new_channel_name);
+	zoho.cliq.createRecord("channeldb",values_map);
+	zoho.cliq.postToChannel(new_channel_name,"This channel is mapped for getting notifications from sprint");
+}
+return response;
