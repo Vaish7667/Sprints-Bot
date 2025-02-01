@@ -1,0 +1,60 @@
+
+response = Map();
+response.put("text","Hello Team :hi: , Hope it was great year :grinning:\n\nTasks completed during this year :");
+bot = Map();
+bot.put("name","Yearly Task update");
+response.put("bot",bot);
+slidesList = list();
+slidesList0 = Map();
+slidesList0.put("type","table");
+slidesList0.put("title","Tasks List");
+data = Map();
+headersList = list();
+headersList.add("Task name");
+headersList.add("Assigned To");
+headersList.add("Completed On");
+data.put("headers",headersList);
+rowsList = list();
+query_map = Map();
+criteria_string = "";
+query_map.put("criteria",criteria_string);
+response_map = zoho.cliq.getRecords("monthlytask",query_map);
+record_id = 0;
+if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+{
+	record_id = response_map.get("list").get(0).get("id");
+}
+if(response_map.get("list").size() > 0)
+{
+	for each  lists in response_map.get("list")
+	{
+		rowsList0 = Map();
+		rowsList0.put("Task name",lists.get("taskname"));
+		rowsList0.put("Assigned To",lists.get("assignedto"));
+		rowsList0.put("Completed On",lists.get("completedon"));
+		rowsList.add(rowsList0);
+		data.put("rows",rowsList);
+	}
+}
+slidesList0.put("data",data);
+slidesList.add(slidesList0);
+slidesList1 = Map();
+slidesList1.put("type","text");
+slidesList1.put("data","Advance Happy New Year :fireworks: . Have a great year ahead :victory:");
+slidesList.add(slidesList1);
+response.put("slides",slidesList);
+zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
+// After posting it in chat, delete the values in DB.
+response_map = zoho.cliq.getRecords("monthlytask",Map());
+if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+{
+	records = response_map.get("list");
+	for each  record in records
+	{
+		record_id = record.get("id");
+		if(record_id.length() > 0)
+		{
+			zoho.cliq.deleteRecord("monthlytask",record_id);
+		}
+	}
+}
