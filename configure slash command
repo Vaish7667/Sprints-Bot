@@ -1,0 +1,88 @@
+// We map project and channel usign this command
+
+// info user;
+userFirstName = user.get("first_name");
+// List available channels
+channels = invokeurl
+[
+	url :"https://cliq.zoho.in/api/v2/channels"
+	type :GET
+	connection:"zohooauth"
+];
+channel_map = Map();
+for each  detail in channels.get("channels")
+{
+	channel_map.put(detail.get("unique_name"),detail.get("name"));
+}
+// info channel_map;
+// list available projects 
+team_response = invokeurl
+[
+	url :"https://sprintsapi.zoho.in/zsapi/teams/"
+	type :GET
+	connection:"sprints"
+];
+// info team_response;
+team_id = team_response.get("myTeamId");
+projects_response = invokeurl
+[
+	url :"https://sprintsapi.zoho.in/zsapi/team/" + team_id + "/projects/?action=data&index=1&range=10"
+	type :GET
+	connection:"sprints"
+];
+project_id_lists = projects_response.get("projectJObj").keys().toList();
+project_map = Map();
+for each  id in project_id_lists
+{
+	project_map.put(id.toString().trim(),projects_response.get("projectJObj").get(id.toString().trim()).get(0));
+}
+// info project_map;
+response = Map();
+response.put("type","form");
+response.put("title","Sprints task");
+response.put("name","sprints_task");
+response.put("button_label","Submit");
+inputsList = list();
+inputsList0 = Map();
+inputsList0.put("label","Choose a project");
+inputsList0.put("name","project");
+inputsList0.put("placeholder","Choose from the list of options");
+inputsList0.put("multiple",false);
+inputsList0.put("mandatory",true);
+inputsList0.put("type","select");
+optionsList = list();
+// for project
+for each  p_id in project_map.keys()
+{
+	// 	info p_id;
+	optionsList0 = Map();
+	optionsList0.put("value",p_id);
+	optionsList0.put("label",project_map.get(p_id.toString().trim()));
+	optionsList.add(optionsList0);
+}
+inputsList0.put("options",optionsList);
+inputsList.add(inputsList0);
+inputsList1 = Map();
+inputsList1.put("label","Choose a channel to map");
+inputsList1.put("name","channel");
+inputsList1.put("placeholder","Choose from the list of options");
+inputsList1.put("multiple",false);
+inputsList1.put("mandatory",true);
+inputsList1.put("type","select");
+optionsList = list();
+//for channel
+for each  c_id in channel_map.keys()
+{
+	optionsList0 = Map();
+	optionsList0.put("value",c_id);
+	optionsList0.put("label",channel_map.get(c_id.toString().trim()));
+	optionsList.add(optionsList0);
+}
+inputsList1.put("options",optionsList);
+inputsList.add(inputsList1);
+response.put("inputs",inputsList);
+action = Map();
+action.put("type","invoke.function");
+action.put("name","mapchannel");
+response.put("action",action);
+return response;
