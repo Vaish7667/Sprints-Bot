@@ -152,27 +152,35 @@ for each  i in project_channel_list
 				}
 			}
 		}
-		data.put("rows",rowsList);
-		slidesList0.put("data",data);
-		slidesList.add(slidesList0);
-		if(tasks_without_deadline.size() > 1)
+		info rowsList.size();
+		if(rowsList.size() < 1)
 		{
-			slidesList2 = Map();
-			slidesList2.put("type","text");
-			slidesList2.put("data","Alert: " + tasks_without_deadline + " are missing end date");
-			slidesList.add(slidesList2);
+			zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371","Hurray :happy: , there are no tasks assigned this week. ");
 		}
-		else if(tasks_without_deadline.size() == 1)
+		else
 		{
-			slidesList2 = Map();
-			slidesList2.put("type","text");
-			slidesList2.put("data","Alert: " + tasks_without_deadline + " is missing end date");
-			slidesList.add(slidesList2);
+			data.put("rows",rowsList);
+			slidesList0.put("data",data);
+			slidesList.add(slidesList0);
+			if(tasks_without_deadline.size() > 1)
+			{
+				slidesList2 = Map();
+				slidesList2.put("type","text");
+				slidesList2.put("data","Alert: " + tasks_without_deadline + " are missing end date");
+				slidesList.add(slidesList2);
+			}
+			else if(tasks_without_deadline.size() == 1)
+			{
+				slidesList2 = Map();
+				slidesList2.put("type","text");
+				slidesList2.put("data","Alert: " + tasks_without_deadline + " is missing end date");
+				slidesList.add(slidesList2);
+			}
+			response.put("slides",slidesList);
+			// 		zoho.cliq.postToChannel(channel_name,response);
+			zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
+			// zoho.cliq.postToBot("taskinfo",response);
 		}
-		response.put("slides",slidesList);
-		// 		zoho.cliq.postToChannel(channel_name,response);
-		zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
-		// zoho.cliq.postToBot("taskinfo",response);
 	}
 	else
 	{
