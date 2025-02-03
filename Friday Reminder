@@ -201,43 +201,50 @@ for each  i in project_channel_list
 			}
 		}
 	}
-	data.put("rows",rowsList);
-	slidesList0.put("data",data);
-	slidesList.add(slidesList0);
-	if(tasks_without_deadline.size() == 1)
+	if(rowsList.size() < 1)
 	{
+		zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371","No task is assigned or progressed throughout the week.");
+	}
+	else
+	{
+		data.put("rows",rowsList);
+		slidesList0.put("data",data);
+		slidesList.add(slidesList0);
+		if(tasks_without_deadline.size() == 1)
+		{
+			slidesList2 = Map();
+			slidesList2.put("type","text");
+			slidesList2.put("data","Alert: " + tasks_without_deadline + " is missing end date");
+			slidesList.add(slidesList2);
+		}
+		else if(tasks_without_deadline.size() > 1)
+		{
+			slidesList2 = Map();
+			slidesList2.put("type","text");
+			slidesList2.put("data","Alert: " + tasks_without_deadline + " are missing end date");
+			slidesList.add(slidesList2);
+		}
 		slidesList2 = Map();
 		slidesList2.put("type","text");
-		slidesList2.put("data","Alert: " + tasks_without_deadline + " is missing end date");
+		completion_percentage = ((completed_task * 100) / rowsList.size()).toLong();
+		slidesList2.put("data","Completion Percentage: " + completion_percentage + "%");
 		slidesList.add(slidesList2);
+		response.put("slides",slidesList);
+		// 	zoho.cliq.postToChannel(channel_name,response);
+		zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
+		// zoho.cliq.postToBot("taskinfo",response);
+		// Delete ids from DB.
+		query_map = Map();
+		criteria_string = "";
+		query_map.put("criteria",criteria_string);
+		response_map = zoho.cliq.getRecords("taskiddb",query_map);
+		if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+		{
+			for each  record in response_map.get("list")
+			{
+				record_id = record.get("id");
+				zoho.cliq.deleteRecord("taskiddb",record_id);
+			}
+		}
 	}
-	else if(tasks_without_deadline.size() > 1)
-	{
-		slidesList2 = Map();
-		slidesList2.put("type","text");
-		slidesList2.put("data","Alert: " + tasks_without_deadline + " are missing end date");
-		slidesList.add(slidesList2);
-	}
-	slidesList2 = Map();
-	slidesList2.put("type","text");
-	completion_percentage = ((completed_task * 100) / total_db_tasks).toLong();
-	slidesList2.put("data","Completion Percentage: " + completion_percentage + "%");
-	slidesList.add(slidesList2);
-	response.put("slides",slidesList);
-	// 	zoho.cliq.postToChannel(channel_name,response);
-	zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
-	// zoho.cliq.postToBot("taskinfo",response);
-	// Delete ids from DB.
-	// query_map = Map();
-	// criteria_string = "";
-	// query_map.put("criteria",criteria_string);
-	// response_map = zoho.cliq.getRecords("taskiddb",query_map);
-	// if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
-	// {
-	// 	for each  record in response_map.get("list")
-	// 	{
-	// 		record_id = record.get("id");
-	// 		zoho.cliq.deleteRecord("taskiddb",record_id);
-	// 	}
-	// }
 }
