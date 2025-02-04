@@ -14,13 +14,12 @@ if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("l
 		project_channel_list.add(record_data);
 	}
 }
-info project_channel_list;
 for each  i in project_channel_list
 {
 	project_id = i.get("projectid");
 	channel_name = i.get("channelname");
 	response = Map();
-	response.put("text","Hello Team, Your Progress of tasks throughout the week.");
+	response.put("text","*Hello Team :hi: , Your Progress :target: of tasks throughout the week.*");
 	bot = Map();
 	bot.put("name","Progress info");
 	response.put("bot",bot);
@@ -77,7 +76,7 @@ for each  i in project_channel_list
 		user_map.put(u_id,item_response.get("userDisplayName").get(u_id.toString().trim()));
 	}
 	items = item_response.get("itemJObj");
-	tasks_in_resposne = items.keys();
+	tasks_in_response = items.keys();
 	statusMap = {"33852000000006553":"To Do","33852000000006555":"In Progress","33852000000006557":"Done"};
 	task_status = "";
 	task_name = "";
@@ -100,17 +99,19 @@ for each  i in project_channel_list
 	{
 		item_data = item_response.get("itemJObj").get(t_id.toString().trim());
 		user_id_list = item_response.get("itemJObj").get(t_id.toString().trim()).toList().get(31).toList();
-		info item_data.get(0);
-		info user_id_list;
 		if(item_data.get(6) != "-1")
 		{
+			//if the task has an endDate 
 			end_date = item_data.get(6).toDate("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 			if(item_data.get(15) != "-1")
 			{
+				// if the task is completed
 				completed_on_date = item_data.get(15).toDate("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 				today = zoho.currentdate.toDate("yyyy-MM-dd");
-				five_days_before = today.addDay(-5);
-				upper_limit_date = today;
+				// 				five_days_before = today.addDay(-5);
+				five_days_before = "04-Feb-2025".toDate();
+				// 				upper_limit_date = today;
+				upper_limit_date = "07-Feb-2025".toDate();
 				// friday's date
 				status_code = item_data.get(27).toString().trim();
 				if(statusMap.containsKey(status_code))
@@ -118,12 +119,7 @@ for each  i in project_channel_list
 					task_name = item_data.get(0);
 					task_status = statusMap.get(status_code);
 				}
-				if(task_status == "Done")
-				{
-					completed_task = completed_task + 1;
-					total_db_tasks = total_db_tasks + 1;
-				}
-				if(end_date >= five_days_before && end_date <= upper_limit_date || completed_on_date >= five_days_before && completed_on_date <= upper_limit_date)
+				if(completed_on_date >= five_days_before && completed_on_date <= upper_limit_date)
 				{
 					rowsList0 = Map();
 					rowsList0.put("Task name",task_name);
@@ -136,6 +132,10 @@ for each  i in project_channel_list
 					rowsList0.put("Previous Status","Unplanned");
 					rowsList0.put("Current Status",task_status);
 					rowsList.add(rowsList0);
+					if(task_status == "Done")
+					{
+						completed_task = completed_task + 1;
+					}
 				}
 			}
 			else
@@ -148,9 +148,10 @@ for each  i in project_channel_list
 					task_status = statusMap.get(status_code);
 				}
 				end_date = item_data.get(6).toDate("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-				five_days_before = today.addDay(-5);
-				upper_limit_date = today;
-				info today;
+				// 				five_days_before = today.addDay(-5);
+				five_days_before = "04-Feb-2025".toDate();
+				// 				upper_limit_date = today;
+				upper_limit_date = "07-Feb-2025".toDate();
 				// friday's date
 				if(end_date >= five_days_before && end_date <= upper_limit_date)
 				{
@@ -162,13 +163,20 @@ for each  i in project_channel_list
 						assigned_to = assigned_to + user_map.get(user) + " /";
 					}
 					rowsList0.put("Assigned To",assigned_to.subString(0,assigned_to.length() - 1));
-					rowsList0.put("Previous Status",task_info.get(t_id.toString().trim()));
+					if(task_info.get(t_id.toString().trim()) == "In Progress" || task_info.get(t_id.toString().trim()) == "Done" || task_info.get(t_id.toString().trim()) == "To Do")
+					{
+						rowsList0.put("Previous Status",task_info.get(t_id.toString().trim()));
+					}
+					else
+					{
+						rowsList0.put("Previous Status","Unplanned");
+					}
 					rowsList0.put("Current Status",task_status);
 					rowsList.add(rowsList0);
-				}
-				if(task_status == "Done")
-				{
-					completed_task = completed_task + 1;
+					if(task_status == "Done")
+					{
+						completed_task = completed_task + 1;
+					}
 				}
 			}
 		}
@@ -214,37 +222,38 @@ for each  i in project_channel_list
 		{
 			slidesList2 = Map();
 			slidesList2.put("type","text");
-			slidesList2.put("data","Alert: " + tasks_without_deadline + " is missing end date");
+			slidesList2.put("data","*Alert: " + tasks_without_deadline + " is missing end date*");
 			slidesList.add(slidesList2);
 		}
 		else if(tasks_without_deadline.size() > 1)
 		{
 			slidesList2 = Map();
 			slidesList2.put("type","text");
-			slidesList2.put("data","Alert: " + tasks_without_deadline + " are missing end date");
+			slidesList2.put("data","*Alert: " + tasks_without_deadline + " are missing end date*");
 			slidesList.add(slidesList2);
 		}
 		slidesList2 = Map();
 		slidesList2.put("type","text");
+		info "Completed" + completed_task;
 		completion_percentage = ((completed_task * 100) / rowsList.size()).toLong();
-		slidesList2.put("data","Completion Percentage: " + completion_percentage + "%");
+		slidesList2.put("data","*Completion Percentage: " + completion_percentage + "%*");
 		slidesList.add(slidesList2);
 		response.put("slides",slidesList);
 		// 	zoho.cliq.postToChannel(channel_name,response);
 		zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
 		// zoho.cliq.postToBot("taskinfo",response);
 		// Delete ids from DB.
-		query_map = Map();
-		criteria_string = "";
-		query_map.put("criteria",criteria_string);
-		response_map = zoho.cliq.getRecords("taskiddb",query_map);
-		if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
-		{
-			for each  record in response_map.get("list")
-			{
-				record_id = record.get("id");
-				zoho.cliq.deleteRecord("taskiddb",record_id);
-			}
-		}
+		// 				query_map = Map();
+		// 				criteria_string = "";
+		// 				query_map.put("criteria",criteria_string);
+		// 				response_map = zoho.cliq.getRecords("taskiddb",query_map);
+		// 				if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+		// 				{
+		// 					for each  record in response_map.get("list")
+		// 					{
+		// 						record_id = record.get("id");
+		// 						zoho.cliq.deleteRecord("taskiddb",record_id);
+		// 					}
+		// 				}
 	}
 }
