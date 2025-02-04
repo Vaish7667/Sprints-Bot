@@ -18,7 +18,7 @@
 // channel_name = project_channel_list.get(0).get("channelname");
 // zoho.cliq.postToChannel(channel_name,"Hello Team, Your sprint meeting is scheduled today.");
 response = Map();
-response.put("text","Happy Thursday! :smile:\nYour sprints meeting is scheduled today.");
+response.put("text","*Happy Thursday!* :happy:\nYour sprints meeting is scheduled today. :calendar: ");
 card = Map();
 card.put("title","Meeting reminder");
 response.put("card",card);
