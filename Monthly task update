@@ -1,6 +1,6 @@
 
 response = Map();
-response.put("text","Hello team :hi: , Hope it was a great month :grinning:\n\nList of tasks completed this month:\n");
+response.put("text","*Hello team* :hi: , *Hope it was a great month* :grinning:\n\n*List of tasks completed this month:*\n");
 bot = Map();
 bot.put("name","Monthly task update");
 response.put("bot",bot);
