@@ -1,4 +1,4 @@
-
+// if we wnat to use this same thing for multiple team_id and multiple sprints create a map that stores team_id and sprint id.
 query_map = Map();
 criteria_string = "ismapped==TRUE";
 query_map.put("criteria",criteria_string);
