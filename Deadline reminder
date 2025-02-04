@@ -1,3 +1,4 @@
+
 query_map = Map();
 criteria_string = "ismapped==TRUE";
 query_map.put("criteria",criteria_string);
@@ -19,7 +20,7 @@ for each  i in project_channel_list
 	project_id = i.get("projectid");
 	channel_name = i.get("channelname");
 	response = Map();
-	response.put("text","Hello Team, Tomorrow is the deadline for these tasks.");
+	response.put("text","*Hello Team :hi: , Tomorrow is the __deadline__ for these tasks.* :target: ");
 	bot = Map();
 	bot.put("name","Task info");
 	response.put("bot",bot);
@@ -90,8 +91,10 @@ for each  i in project_channel_list
 		if(item_data.get(6) != "-1")
 		{
 			end_date = item_data.get(6).toDate("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+			info end_date;
 			today = zoho.currentdate.toDate();
 			one_day_from_now = today.addDay(1);
+			info one_day_from_now;
 			status_code = item_data.get(27).toString().trim();
 			priority_code = item_data.get(29).toString().trim();
 			if(statusMap.containsKey(status_code) && priority_map.containsKey(priority_code))
@@ -100,7 +103,7 @@ for each  i in project_channel_list
 				task_status = statusMap.get(status_code);
 				task_priority = priority_map.get(priority_code);
 			}
-			if(end_date < one_day_from_now && end_date > today && task_status != "Done")
+			if(end_date == one_day_from_now && task_status != "Done")
 			{
 				rowsList0 = Map();
 				rowsList0.put("Task name",task_name);
@@ -142,14 +145,14 @@ for each  i in project_channel_list
 	{
 		slidesList2 = Map();
 		slidesList2.put("type","text");
-		slidesList2.put("data","Alert: " + tasks_without_deadline + " are missing end date");
+		slidesList2.put("data","*Alert: " + tasks_without_deadline + " are missing end date*");
 		slidesList.add(slidesList2);
 	}
 	else if(tasks_without_deadline.size() == 1)
 	{
 		slidesList2 = Map();
 		slidesList2.put("type","text");
-		slidesList2.put("data","Alert: " + tasks_without_deadline + " is missing end date");
+		slidesList2.put("data","*Alert: " + tasks_without_deadline + " is missing end date*");
 		slidesList.add(slidesList2);
 	}
 	response.put("slides",slidesList);
