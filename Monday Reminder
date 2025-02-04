@@ -20,7 +20,7 @@ for each  i in project_channel_list
 	project_id = i.get("projectid");
 	channel_name = i.get("channelname");
 	response = Map();
-	response.put("text","Hello Team, Your Tasks for the upcoming week. Good Luck :thumbsup:");
+	response.put("text","*Hello Team :hi: , Your Tasks for the upcoming week :task: . Good Luck :thumbsup: *");
 	bot = Map();
 	bot.put("name","Task info");
 	response.put("bot",bot);
@@ -155,7 +155,15 @@ for each  i in project_channel_list
 		info rowsList.size();
 		if(rowsList.size() < 1)
 		{
-			zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371","Hurray :happy: , there are no tasks assigned this week. ");
+			response = Map();
+			response.put("text","Hurray! :happy: . There are no tasks assigned this week.");
+			bot = Map();
+			bot.put("name","Task info");
+			response.put("bot",bot);
+			card = Map();
+			card.put("title","Task info");
+			response.put("card",card);
+			zoho.cliq.postToChat("CT_1248078471192203869_60036291272-T-1248078471194809371",response);
 		}
 		else
 		{
@@ -166,14 +174,14 @@ for each  i in project_channel_list
 			{
 				slidesList2 = Map();
 				slidesList2.put("type","text");
-				slidesList2.put("data","Alert: " + tasks_without_deadline + " are missing end date");
+				slidesList2.put("data","*Alert: " + tasks_without_deadline + " are missing end date*");
 				slidesList.add(slidesList2);
 			}
 			else if(tasks_without_deadline.size() == 1)
 			{
 				slidesList2 = Map();
 				slidesList2.put("type","text");
-				slidesList2.put("data","Alert: " + tasks_without_deadline + " is missing end date");
+				slidesList2.put("data","*Alert: " + tasks_without_deadline + " is missing end date*");
 				slidesList.add(slidesList2);
 			}
 			response.put("slides",slidesList);
