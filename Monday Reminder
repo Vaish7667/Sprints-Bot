@@ -76,7 +76,6 @@ for each  i in status_ids
 {
 	statusMap.put(i.toString().trim(),status_response.get("statusJObj").get(i.toString().trim()).get(0));
 }
-info statusMap;
 priority_response = invokeurl
 [
 	url :"https://sprintsapi.zoho.in/zsapi/team/" + team_id + "/projects/" + project_id + "/priority/?action=data&index=1&range=10"
@@ -98,7 +97,6 @@ if(number_of_active_sprints == 1)
 		type :GET
 		connection:"sprints"
 	];
-	info item_response;
 	users_involved_list = item_response.get("userDisplayName").keys().toList();
 	user_map = Map();
 	for each  u_id in users_involved_list
@@ -139,6 +137,7 @@ if(number_of_active_sprints == 1)
 				task_status = statusMap.get(status_code);
 				task_priority = priority_map.get(priority_code);
 			}
+			//checks whether the end date is between this week.
 			if(end_date <= five_days_from_now && end_date >= today && task_status != "Done")
 			{
 				rowsList0 = Map();
@@ -153,12 +152,15 @@ if(number_of_active_sprints == 1)
 				{
 					rowsList0.put("Status",task_status + " :task: ");
 				}
-				else if(task_status == "In progress" + " :man-running: ")
+				else if(task_status == "In progress")
+				{
+					rowsList0.put("Status",task_status + " :man-running: ");
+				}
+				else
 				{
 					rowsList0.put("Status",task_status);
 				}
 				rowsList0.put("Priority",task_priority);
-				info task_priority;
 				rowsList0.put("Due date",end_date);
 				rowsList.add(rowsList0);
 				values_map = Map();
@@ -194,6 +196,10 @@ if(number_of_active_sprints == 1)
 				else if(task_status == "In progress")
 				{
 					rowsList0.put("Status",task_status + " :man-running: ");
+				}
+				else
+				{
+					rowsList0.put("Status",task_status);
 				}
 				rowsList0.put("Priority",task_priority);
 				rowsList0.put("Due date","None");
@@ -247,6 +253,6 @@ if(number_of_active_sprints == 1)
 }
 else
 {
-	zoho.cliq.postToChannel("sprintsinfo","There are more than one active sprint. Consider closing the sprints or moving the tasks to another sprint.");
+	zoho.cliq.postToChannel(channel_thread,"There are more than one active sprint. Consider closing the sprints or moving the tasks to another sprint.");
 }
 // }
